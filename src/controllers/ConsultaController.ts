@@ -20,38 +20,35 @@ export class ConsultaController {
 
     try {
       const response = await axios.post(
-        "https://api.openai.com/v1/chat/completions",
+        "https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent",
         {
-          model: "gpt-3.5-turbo",
-          messages: [
+          contents: [
             {
-              role: "system",
-              content: "Você é um assistente jurídico.",
-            },
-            {
-              role: "user",
-              content: pergunta,
+              parts: [
+                {
+                  text: pergunta,
+                },
+              ],
             },
           ],
         },
         {
           headers: {
-            Authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
             "Content-Type": "application/json",
+            "x-goog-api-key": `${process.env.GEMINI_API_KEY}`,
           },
         }
       );
 
-      const respostaGPT = response.data.choices[0].message.content;
+      const respostaGemini = response.data.candidates[0].content.parts[0].text;
 
-      // Formato de resposta que o app espera
-      return reply.send({ resposta: respostaGPT });
+      return reply.send({ resposta: respostaGemini });
     } catch (error: any) {
       console.error(
-        "Erro na API do OpenAI:",
+        "Erro na API do Gemini:",
         error.response?.data || error.message
       );
-      return reply.code(500).send({ error: "Erro ao consultar o ChatGPT" });
+      return reply.code(500).send({ error: "Erro ao consultar o Gemini" });
     }
   };
 }

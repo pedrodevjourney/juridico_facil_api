@@ -23,7 +23,6 @@ export async function routes(
   const consultaController = new ConsultaController();
   const conversationController = new ConversationController();
 
-  // Rota raiz para consulta - usada pelo app nas funções startConversation e continueConversation
   app.post(
     "/",
     {
@@ -42,7 +41,6 @@ export async function routes(
     }
   );
 
-  // Rotas para gerenciamento de conversas - usadas pelo app nas funções listConversations, getConversation, deleteConversation
   app.get("/conversations", async (request, reply) => {
     return conversationController.listConversations(request, reply);
   });
@@ -83,7 +81,6 @@ export async function routes(
     }
   );
 
-  // Mantendo as rotas originais para compatibilidade com outros possíveis clientes
   app.post(
     "/chat/start",
     {

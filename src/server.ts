@@ -51,10 +51,6 @@ const start = async () => {
 
   try {
     await app.listen({ port: 3333, host: "0.0.0.0" });
-    console.log("Servidor rodando em http://localhost:3333");
-    console.log(
-      "Para acessar pelo IP local (para dispositivos móveis): http://127.0.0.1:3333"
-    );
   } catch (err) {
     app.log.error(err);
     process.exit(1);
