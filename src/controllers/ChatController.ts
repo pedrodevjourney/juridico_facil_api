@@ -1,5 +1,6 @@
 import { FastifyRequest, FastifyReply } from "fastify";
-import { GoogleGenerativeAI } from "@google/generative-ai";
+import { Controller } from "../interfaces/Controller";
+import { AIService } from "../services/AIService";
 
 export interface ChatStartRequest {
   Body: {
@@ -16,11 +17,14 @@ export interface ChatContinueRequest {
   };
 }
 
-export class ChatController {
-  startChat = async (
-    request: FastifyRequest<ChatStartRequest>,
-    reply: FastifyReply
-  ) => {
+export class ChatStartController implements Controller {
+  private aiService: AIService;
+
+  constructor(aiService: AIService) {
+    this.aiService = aiService;
+  }
+
+  async handle(request: FastifyRequest<ChatStartRequest>, reply: FastifyReply) {
     try {
       const { message } = request.body;
 
@@ -28,34 +32,33 @@ export class ChatController {
         return reply.code(400).send({ error: "Mensagem inválida ou ausente." });
       }
 
-      const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!);
-      const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
-
       const prompt = "Você é um assistente jurídico especializado. " + message;
-      const result = await model.generateContent(prompt);
-      const response = await result.response;
-      const text = response.text();
+      const response = await this.aiService.generateResponse(prompt);
 
       const conversation_id = Date.now().toString();
       return reply.send({
-        conversation_id: conversation_id,
-        message: text,
+        conversation_id,
+        message: response.text,
       });
     } catch (error: any) {
-      console.error(
-        "Erro na API do Gemini:",
-        error.response?.data || error.message
-      );
       return reply
         .code(500)
-        .send({ error: "Erro ao iniciar conversa com o Gemini" });
+        .send({ error: "Erro ao iniciar conversa com o assistente" });
     }
-  };
+  }
+}
 
-  continueChat = async (
+export class ChatContinueController implements Controller {
+  private aiService: AIService;
+
+  constructor(aiService: AIService) {
+    this.aiService = aiService;
+  }
+
+  async handle(
     request: FastifyRequest<ChatContinueRequest>,
     reply: FastifyReply
-  ) => {
+  ) {
     try {
       const { message } = request.body;
       const { conversationId } = request.params;
@@ -64,26 +67,17 @@ export class ChatController {
         return reply.code(400).send({ error: "Mensagem inválida ou ausente." });
       }
 
-      const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!);
-      const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
-
       const prompt = "Você é um assistente jurídico especializado. " + message;
-      const result = await model.generateContent(prompt);
-      const response = await result.response;
-      const text = response.text();
+      const response = await this.aiService.generateResponse(prompt);
 
       return reply.send({
         conversation_id: conversationId,
-        message: text,
+        message: response.text,
       });
     } catch (error: any) {
-      console.error(
-        "Erro na API do Gemini:",
-        error.response?.data || error.message
-      );
       return reply
         .code(500)
-        .send({ error: "Erro ao continuar conversa com o Gemini" });
+        .send({ error: "Erro ao continuar conversa com o assistente" });
     }
-  };
+  }
 }

@@ -3,26 +3,33 @@ import cors from "@fastify/cors";
 import dotenv from "dotenv";
 import { routes } from "./routes";
 
-const app: FastifyInstance = Fastify({
-  logger: true,
-  ajv: {
-    customOptions: {
-      removeAdditional: false,
-      useDefaults: true,
-      coerceTypes: true,
-      allErrors: true,
-    },
-  },
-  ignoreTrailingSlash: true,
-});
 dotenv.config();
 
-app.setErrorHandler((error, request, reply) => {
-  app.log.error(error);
-  reply.code(400).send({ message: error.message });
-});
+function createServer(): FastifyInstance {
+  const app = Fastify({
+    logger: true,
+    ajv: {
+      customOptions: {
+        removeAdditional: false,
+        useDefaults: true,
+        coerceTypes: true,
+        allErrors: true,
+      },
+    },
+    ignoreTrailingSlash: true,
+  });
+
+  app.setErrorHandler((error, request, reply) => {
+    app.log.error(error);
+    reply.code(400).send({ message: error.message });
+  });
+
+  return app;
+}
 
 const start = async () => {
+  const app = createServer();
+
   await app.register(cors, {
     origin: true,
     methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],

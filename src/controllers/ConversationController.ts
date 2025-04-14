@@ -1,4 +1,5 @@
 import { FastifyRequest, FastifyReply } from "fastify";
+import { Controller } from "../interfaces/Controller";
 
 export interface ConversationParams {
   Params: {
@@ -6,12 +7,14 @@ export interface ConversationParams {
   };
 }
 
-export class ConversationController {
-  async listConversations(request: FastifyRequest, reply: FastifyReply) {
+export class ListConversationsController implements Controller {
+  async handle(request: FastifyRequest, reply: FastifyReply) {
     return reply.send({ conversations: [] });
   }
+}
 
-  async getConversation(
+export class GetConversationController implements Controller {
+  async handle(
     request: FastifyRequest<ConversationParams>,
     reply: FastifyReply
   ) {
@@ -21,8 +24,10 @@ export class ConversationController {
       messages: [],
     });
   }
+}
 
-  async deleteConversation(
+export class DeleteConversationController implements Controller {
+  async handle(
     request: FastifyRequest<ConversationParams>,
     reply: FastifyReply
   ) {

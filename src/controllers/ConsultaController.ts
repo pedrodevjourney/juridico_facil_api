@@ -1,5 +1,6 @@
 import { FastifyRequest, FastifyReply } from "fastify";
-import axios from "axios";
+import { Controller } from "../interfaces/Controller";
+import { AIService } from "../services/AIService";
 
 export interface ConsultaRequest {
   Body: {
@@ -7,11 +8,14 @@ export interface ConsultaRequest {
   };
 }
 
-export class ConsultaController {
-  consultar = async (
-    request: FastifyRequest<ConsultaRequest>,
-    reply: FastifyReply
-  ) => {
+export class ConsultaController implements Controller {
+  private aiService: AIService;
+
+  constructor(aiService: AIService) {
+    this.aiService = aiService;
+  }
+
+  async handle(request: FastifyRequest<ConsultaRequest>, reply: FastifyReply) {
     const { pergunta } = request.body;
 
     if (!pergunta) {
@@ -19,36 +23,10 @@ export class ConsultaController {
     }
 
     try {
-      const response = await axios.post(
-        "https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent",
-        {
-          contents: [
-            {
-              parts: [
-                {
-                  text: pergunta,
-                },
-              ],
-            },
-          ],
-        },
-        {
-          headers: {
-            "Content-Type": "application/json",
-            "x-goog-api-key": `${process.env.GEMINI_API_KEY}`,
-          },
-        }
-      );
-
-      const respostaGemini = response.data.candidates[0].content.parts[0].text;
-
-      return reply.send({ resposta: respostaGemini });
+      const response = await this.aiService.generateResponse(pergunta);
+      return reply.send({ resposta: response.text });
     } catch (error: any) {
-      console.error(
-        "Erro na API do Gemini:",
-        error.response?.data || error.message
-      );
-      return reply.code(500).send({ error: "Erro ao consultar o Gemini" });
+      return reply.code(500).send({ error: "Erro ao consultar o assistente" });
     }
-  };
+  }
 }
