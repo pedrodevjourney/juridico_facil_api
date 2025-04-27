@@ -1,0 +1,31 @@
+generator client {
+  provider = "prisma-client-js"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Consulta {
+  id               String       @id @default(uuid())
+  atualizado_em    DateTime     @updatedAt @map("atualizado_em")
+  criado_em        DateTime     @default(now()) @map("criado_em")
+  data_consulta    DateTime     @map("data_consulta")
+  descricao_caso   String       @map("descricao_caso")
+  email_cliente    String       @map("email_cliente")
+  hora_consulta    String       @map("hora_consulta")
+  nome_cliente     String       @map("nome_cliente")
+  status           Boolean      @default(true)
+  telefone_cliente String       @map("telefone_cliente")
+  tipo_consulta    TipoConsulta @map("tipo_consulta")
+
+  @@map("consultas")
+}
+
+enum TipoConsulta {
+  PRESENCIAL
+  ONLINE
+  URGENTE
+}

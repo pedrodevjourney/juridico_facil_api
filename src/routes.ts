@@ -12,6 +12,8 @@ import {
 } from "./controllers/ChatController";
 import { ConsultaRequest } from "./controllers/ConsultaController";
 import { ConversationParams } from "./controllers/ConversationController";
+import { AgendamentoConsultaRequest } from "./controllers/AgendamentoConsultaController";
+import { BuscarConsultaParams } from "./controllers/BuscarConsultaController";
 
 export async function routes(
   app: FastifyInstance,
@@ -49,6 +51,30 @@ export async function routes(
     required: ["conversationId"],
     properties: {
       conversationId: { type: "string" },
+    },
+  };
+
+  const agendamentoSchema = {
+    type: "object",
+    required: [
+      "tipo_consulta",
+      "data_consulta",
+      "hora_consulta",
+      "nome_cliente",
+      "email_cliente",
+      "telefone_cliente",
+    ],
+    properties: {
+      tipo_consulta: {
+        type: "string",
+        enum: ["PRESENCIAL", "ONLINE", "URGENTE"],
+      },
+      data_consulta: { type: "string", format: "date" },
+      hora_consulta: { type: "string" },
+      nome_cliente: { type: "string" },
+      email_cliente: { type: "string", format: "email" },
+      telefone_cliente: { type: "string" },
+      descricao_caso: { type: "string" },
     },
   };
 
@@ -95,10 +121,29 @@ export async function routes(
       controllers.chatContinueController.handle(request, reply)
   );
 
-  // Rota de consulta
+  // Rota de consulta IA
   app.post(
     "/consulta",
     { schema: { body: perguntaSchema } },
     (request, reply) => controllers.consultaController.handle(request, reply)
+  );
+
+  // Rotas de agendamento de consultas jurídicas
+  app.post(
+    "/agendamento",
+    { schema: { body: agendamentoSchema } },
+    (request, reply) =>
+      controllers.agendamentoConsultaController.handle(request, reply)
+  );
+
+  app.get("/agendamento", (request, reply) =>
+    controllers.listarConsultasController.handle(request, reply)
+  );
+
+  app.get(
+    "/agendamento/:id",
+    { schema: { params: idParamSchema } },
+    (request, reply) =>
+      controllers.buscarConsultaController.handle(request, reply)
   );
 }
