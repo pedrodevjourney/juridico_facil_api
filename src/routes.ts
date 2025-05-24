@@ -5,6 +5,7 @@ import {
   FastifyReply,
 } from "fastify";
 import { createControllers } from "./factories/controllerFactory";
+import { authMiddleware } from "./middlewares/auth";
 
 import {
   ChatStartRequest,
@@ -14,6 +15,7 @@ import { ConsultaRequest } from "./controllers/ConsultaController";
 import { ConversationParams } from "./controllers/ConversationController";
 import { AgendamentoConsultaRequest } from "./controllers/AgendamentoConsultaController";
 import { BuscarConsultaParams } from "./controllers/BuscarConsultaController";
+import { CreateUserDTO, LoginDTO } from "./interfaces/User";
 
 export async function routes(
   app: FastifyInstance,
@@ -21,7 +23,6 @@ export async function routes(
 ) {
   const controllers = createControllers();
 
-  // Definir esquemas para validação
   const messageSchema = {
     type: "object",
     required: ["message"],
@@ -78,38 +79,85 @@ export async function routes(
     },
   };
 
-  // Rotas raiz
-  app.post("/", { schema: { body: perguntaSchema } }, (request, reply) =>
-    controllers.consultaController.handle(request, reply)
+  const registerSchema = {
+    type: "object",
+    required: ["nome", "email", "senha"],
+    properties: {
+      nome: { type: "string", minLength: 3 },
+      email: {
+        type: "string",
+        format: "email",
+      },
+      senha: { type: "string", minLength: 6 },
+    },
+  };
+
+  const loginSchema = {
+    type: "object",
+    required: ["email", "senha"],
+    properties: {
+      email: {
+        type: "string",
+        format: "email",
+      },
+      senha: { type: "string" },
+    },
+  };
+
+  app.post<{ Body: CreateUserDTO }>(
+    "/auth/register",
+    { schema: { body: registerSchema } },
+    (request, reply) => controllers.authController.register(request, reply)
   );
 
-  // Rotas de conversas
+  app.post<{ Body: LoginDTO }>(
+    "/auth/login",
+    { schema: { body: loginSchema } },
+    (request, reply) => controllers.authController.login(request, reply)
+  );
+
+  const publicRoutes = ["/auth/register", "/auth/login"];
+
+  app.addHook("preHandler", async (request, reply) => {
+    const path = request.url.split("?")[0];
+
+    const isPublic = publicRoutes.some((route) => path.startsWith(route));
+    if (!isPublic) {
+      return authMiddleware(request, reply);
+    }
+  });
+
+  app.post<{ Body: ConsultaRequest }>(
+    "/",
+    { schema: { body: perguntaSchema } },
+    (request, reply) => controllers.consultaController.handle(request, reply)
+  );
+
   app.get("/conversations", (request, reply) =>
     controllers.listConversationsController.handle(request, reply)
   );
 
-  app.get(
+  app.get<{ Params: ConversationParams }>(
     "/conversations/:id",
     { schema: { params: idParamSchema } },
     (request, reply) =>
       controllers.getConversationController.handle(request, reply)
   );
 
-  app.delete(
+  app.delete<{ Params: ConversationParams }>(
     "/conversations/:id",
     { schema: { params: idParamSchema } },
     (request, reply) =>
       controllers.deleteConversationController.handle(request, reply)
   );
 
-  // Rotas de chat
-  app.post(
+  app.post<{ Body: ChatStartRequest }>(
     "/chat/start",
     { schema: { body: messageSchema } },
     (request, reply) => controllers.chatStartController.handle(request, reply)
   );
 
-  app.post(
+  app.post<{ Body: ChatContinueRequest; Params: { conversationId: string } }>(
     "/chat/:conversationId/continue",
     {
       schema: {
@@ -121,15 +169,13 @@ export async function routes(
       controllers.chatContinueController.handle(request, reply)
   );
 
-  // Rota de consulta IA
-  app.post(
+  app.post<{ Body: ConsultaRequest }>(
     "/consulta",
     { schema: { body: perguntaSchema } },
     (request, reply) => controllers.consultaController.handle(request, reply)
   );
 
-  // Rotas de agendamento de consultas jurídicas
-  app.post(
+  app.post<{ Body: AgendamentoConsultaRequest }>(
     "/agendamento",
     { schema: { body: agendamentoSchema } },
     (request, reply) =>
@@ -140,7 +186,7 @@ export async function routes(
     controllers.listarConsultasController.handle(request, reply)
   );
 
-  app.get(
+  app.get<{ Params: BuscarConsultaParams }>(
     "/agendamento/:id",
     { schema: { params: idParamSchema } },
     (request, reply) =>

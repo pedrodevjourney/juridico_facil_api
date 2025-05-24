@@ -13,6 +13,8 @@ import { AgendamentoConsultaController } from "../controllers/AgendamentoConsult
 import { ListarConsultasController } from "../controllers/ListarConsultasController";
 import { BuscarConsultaController } from "../controllers/BuscarConsultaController";
 import { ConsultaService } from "../services/ConsultaService";
+import { AuthController } from "../controllers/AuthController";
+import { AuthService } from "../services/AuthService";
 
 export function createControllers() {
   const aiService = new AIService({
@@ -21,6 +23,8 @@ export function createControllers() {
   });
 
   const consultaService = new ConsultaService();
+  const authService = new AuthService();
+  const authController = new AuthController(authService);
 
   return {
     chatStartController: new ChatStartController(aiService),
@@ -36,5 +40,6 @@ export function createControllers() {
     ),
     listarConsultasController: new ListarConsultasController(consultaService),
     buscarConsultaController: new BuscarConsultaController(consultaService),
+    authController,
   };
 }
